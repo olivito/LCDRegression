@@ -16,10 +16,14 @@ else:
     outdir = sys.argv[2]
 
 with h5.File(infile,'r') as f:
-    #reg_loss_history_test = f['regressor_loss_history_test'][:]
-    #reg_loss_history_train = f['regressor_loss_history_train'][:]
-    reg_pred = f['regressor_pred'][:]
-    reg_true = f['regressor_true'][:]
+    try:
+        reg_loss_history_test = f['regressor_loss_history_test'][:]
+        reg_loss_history_train = f['regressor_loss_history_train'][:]
+    except:
+        reg_loss_history_test = None
+        reg_loss_history_train = None
+    reg_pred = f['regressor_pred'][:].reshape(-1)
+    reg_true = f['regressor_true'][:].reshape(-1)
     try:
         reg_meandiff_history_test = f['regressor_meandiff_history_test'][:]
         reg_sigmadiff_history_test = f['regressor_sigmadiff_history_test'][:]
@@ -27,26 +31,28 @@ with h5.File(infile,'r') as f:
         reg_meandiff_history_test = None
         reg_sigmadiff_history_test = None
         
+try:
+    # plot loss vs training update
+    n_epochs = reg_loss_history_test.shape[0]
+    updates_per_epoch = int(reg_loss_history_train.shape[0]/n_epochs)
 
-# # plot loss vs training update
-# n_epochs = reg_loss_history_test.shape[0]
-# updates_per_epoch = int(reg_loss_history_train.shape[0]/n_epochs)
+    reg_loss_history_train_epochs = np.sum(reg_loss_history_train.reshape(n_epochs,updates_per_epoch),axis=1)/updates_per_epoch
 
-# reg_loss_history_train_epochs = np.sum(reg_loss_history_train.reshape(n_epochs,updates_per_epoch),axis=1)/updates_per_epoch
+    plt.plot(reg_loss_history_train_epochs,label='Train loss',marker='o')
+    plt.plot(reg_loss_history_test,label='Test loss',marker='o')
+    plt.xlabel('Epoch')
+    plt.legend(loc='best')
+    plt.savefig('%s/loss_vs_epoch.eps'%(outdir))
+    plt.clf()
 
-# plt.plot(reg_loss_history_train_epochs,label='Train loss',marker='o')
-# plt.plot(reg_loss_history_test,label='Test loss',marker='o')
-# plt.xlabel('Epoch')
-# plt.legend(loc='best')
-# plt.savefig('%s/loss_vs_epoch.eps'%(outdir))
-# plt.clf()
-
-# # plot test loss only to be more legible
-# plt.plot(reg_loss_history_test,label='Test loss',marker='o')
-# plt.xlabel('Epoch')
-# plt.legend(loc='best')
-# plt.savefig('%s/test_loss_vs_epoch.eps'%(outdir))
-# plt.clf()
+    # plot test loss only to be more legible
+    plt.plot(reg_loss_history_test,label='Test loss',marker='o')
+    plt.xlabel('Epoch')
+    plt.legend(loc='best')
+    plt.savefig('%s/test_loss_vs_epoch.eps'%(outdir))
+    plt.clf()
+except:
+    print 'loss history not present'
 
 try:
     plt.plot(reg_meandiff_history_test,label='Test meandiff',marker='o')
@@ -71,6 +77,8 @@ plt.hist2d(reg_true,reg_pred,bins=fine_bins,norm=colors.LogNorm())
 plt.xlabel('True Energy [GeV]')
 plt.ylabel('Predicted Energy [GeV]')
 plt.savefig('%s/true_vs_pred_E.eps'%(outdir))
+plt.savefig('%s/true_vs_pred_E.pdf'%(outdir))
+plt.savefig('%s/true_vs_pred_E.png'%(outdir))
 plt.clf()
 
 reldiff = (reg_true - reg_pred) / reg_true * 100.
