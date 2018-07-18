@@ -55,17 +55,7 @@ for (infile,label) in input_files:
         reg_true_name = 'regressor_true' if 'regressor_true' in f.keys() else 'reg_energy_truth'
         reg_pred = f[reg_pred_name][:].reshape(-1)
         reg_true = f[reg_true_name][:].reshape(-1)
-        try:
-            reg_features = f['regressor_features'][:]
-        except:
-            print 'did not find regressor_features'
-            reg_features = None
     reldiff = (reg_true - reg_pred) / reg_true * 100.
-    try:
-        reldiff_features = np.concatenate([reldiff.reshape(-1,1),reg_features,reg_true.reshape(-1,1)],axis=1)
-    except:
-        print 'could not make reldiff_features'
-        reldiff_features = None
 
     reldiff_means = binned_statistic(reg_true, reldiff, statistic='mean', bins=coarse_bins).statistic
     reldiff_sigmas = binned_statistic(reg_true, reldiff, statistic=np.std, bins=coarse_bins).statistic
